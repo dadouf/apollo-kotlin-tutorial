@@ -2,6 +2,7 @@ package com.example.rocketreserver
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
 
@@ -25,6 +26,7 @@ object User {
     }
 
     fun setToken(context: Context, token: String) {
+        Log.d("Login", "Saving token: $token")
         preferences(context).edit().apply {
             putString(KEY_TOKEN, token)
             apply()
