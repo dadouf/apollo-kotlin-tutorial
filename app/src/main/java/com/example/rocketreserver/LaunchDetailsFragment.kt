@@ -8,8 +8,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
-import coil.load
-import com.apollographql.apollo3.exception.ApolloException
+import com.apollographql.apollo.GraphQLCall
+import com.apollographql.apollo.api.Response
+import com.apollographql.apollo.exception.ApolloException
 import com.example.rocketreserver.databinding.LaunchDetailsFragmentBinding
 
 class LaunchDetailsFragment : Fragment() {
@@ -36,34 +37,68 @@ class LaunchDetailsFragment : Fragment() {
             binding.progressBar.visibility = View.VISIBLE
             binding.error.visibility = View.GONE
 
-            val response = try {
-                apolloClient(requireContext()).query(LaunchDetailsQuery(args.launchId)).execute()
-            } catch (e: ApolloException) {
-                binding.progressBar.visibility = View.GONE
-                binding.error.text = "Oh no... A protocol error happened"
-                binding.error.visibility = View.VISIBLE
-                return@launchWhenResumed
-            }
+            apolloClient(requireContext()).query(GetProjectQuery(args.launchId))
+                .enqueue(object : GraphQLCall.Callback<GetProjectQuery.Data>() {
+                    override fun onResponse(response: Response<GetProjectQuery.Data>) {
+                        val project = response.data()?.projectById
+                        if (project == null || response.hasErrors()) {
+                            binding.progressBar.visibility = View.GONE
+                            binding.error.text = response.errors()?.get(0)?.message()
+                            binding.error.visibility = View.VISIBLE
+                            return
+                        }
 
-            val launch = response.data?.launch
-            if (launch == null || response.hasErrors()) {
-                binding.progressBar.visibility = View.GONE
-                binding.error.text = response.errors?.get(0)?.message
-                binding.error.visibility = View.VISIBLE
-                return@launchWhenResumed
-            }
+                        binding.progressBar.visibility = View.GONE
 
-            binding.progressBar.visibility = View.GONE
+//            binding.missionPatch.load(launch.mission?.missionPatch) {
+//                placeholder(R.drawable.ic_placeholder)
+//            }
 
-            binding.missionPatch.load(launch.mission?.missionPatch) {
-                placeholder(R.drawable.ic_placeholder)
-            }
-            binding.site.text = launch.site
-            binding.missionName.text = launch.mission?.name
-            val rocket = launch.rocket
-            binding.rocketName.text = "🚀 ${rocket?.name} ${rocket?.type}"
+                        binding.missionName.text = project.name
+                        binding.site.text = project.description
+                        binding.rocketName.text =
+                            "Created ${project.createdDate}\nStarts ${project.projectStart}"
 
-            configureBookButton(launch.isBooked)
+//            configureBookButton(launch.isBooked)
+
+                    }
+
+                    override fun onFailure(e: ApolloException) {
+                        binding.progressBar.visibility = View.GONE
+                        binding.error.text = "Oh no... A protocol error happened"
+                        binding.error.visibility = View.VISIBLE
+                    }
+
+                })
+
+//            val response = try {
+//                apolloClient(requireContext()).query(LaunchDetailsQuery(args.launchId)).execute()
+//            } catch (e: Exception) {
+//                binding.progressBar.visibility = View.GONE
+//                binding.error.text = "Oh no... A protocol error happened"
+//                binding.error.visibility = View.VISIBLE
+//                return@launchWhenResumed
+//            }
+//
+//            val launch = response.data?.launch
+//            if (launch == null || response.hasErrors()) {
+//                binding.progressBar.visibility = View.GONE
+//                binding.error.text = response.errors?.get(0)?.message
+//                binding.error.visibility = View.VISIBLE
+//                return@launchWhenResumed
+//            }
+//
+//            binding.progressBar.visibility = View.GONE
+//
+//            binding.missionPatch.load(launch.mission?.missionPatch) {
+//                placeholder(R.drawable.ic_placeholder)
+//            }
+//            binding.site.text = launch.site
+//            binding.missionName.text = launch.mission?.name
+//            val rocket = launch.rocket
+//            binding.rocketName.text = "🚀 ${rocket?.name} ${rocket?.type}"
+//
+//            configureBookButton(launch.isBooked)
         }
     }
 
@@ -87,23 +122,23 @@ class LaunchDetailsFragment : Fragment() {
             binding.bookProgressBar.visibility = View.VISIBLE
 
             lifecycleScope.launchWhenResumed {
-                val mutation = if (isBooked) {
-                    CancelTripMutation(id = args.launchId)
-                } else {
-                    BookTripMutation(id = args.launchId)
-                }
-
-                val response = try {
-                    apolloClient(requireContext()).mutation(mutation).execute()
-                } catch (e: ApolloException) {
-                    configureBookButton(isBooked)
-                    return@launchWhenResumed
-                }
-
-                if (response.hasErrors()) {
-                    configureBookButton(isBooked)
-                    return@launchWhenResumed
-                }
+//                val mutation = if (isBooked) {
+//                    CancelTripMutation(id = args.launchId)
+//                } else {
+//                    BookTripMutation(id = args.launchId)
+//                }
+//
+//                val response = try {
+//                    apolloClient(requireContext()).mutation(mutation).execute()
+//                } catch (e: ApolloException) {
+//                    configureBookButton(isBooked)
+//                    return@launchWhenResumed
+//                }
+//
+//                if (response.hasErrors()) {
+//                    configureBookButton(isBooked)
+//                    return@launchWhenResumed
+//                }
 
                 configureBookButton(!isBooked)
             }

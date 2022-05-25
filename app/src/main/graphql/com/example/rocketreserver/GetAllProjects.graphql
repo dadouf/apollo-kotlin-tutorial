@@ -1,0 +1,9 @@
+query GetAllProjects {
+    getProjects {
+        items {
+            id
+            name
+            description
+        }
+    }
+}

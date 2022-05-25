@@ -1,23 +1,23 @@
 package com.example.rocketreserver
 
 import android.content.Context
-import com.apollographql.apollo3.ApolloClient
-import com.apollographql.apollo3.network.okHttpClient
+import com.amazonaws.mobile.config.AWSConfiguration
+import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 
-private var instance: ApolloClient? = null
+private var instance: AWSAppSyncClient? = null
 
-fun apolloClient(context: Context): ApolloClient {
+fun apolloClient(context: Context): AWSAppSyncClient {
     return instance ?: run {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(AuthorizationInterceptor(context))
             .build()
 
-        return ApolloClient.Builder()
-            .serverUrl("https://apollo-fullstack-tutorial.herokuapp.com/graphql")
-            .webSocketServerUrl("wss://apollo-fullstack-tutorial.herokuapp.com/graphql")
+        return AWSAppSyncClient.builder()
+            .context(context)
+            .awsConfiguration(AWSConfiguration(context)) // see res/raw/awsconfiguration.json
             .okHttpClient(okHttpClient)
             .build()
             .also { instance = it }

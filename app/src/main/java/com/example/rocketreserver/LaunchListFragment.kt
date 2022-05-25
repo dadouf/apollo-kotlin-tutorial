@@ -9,7 +9,9 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.apollographql.apollo3.api.Optional
+import com.apollographql.apollo.GraphQLCall
+import com.apollographql.apollo.api.Response
+import com.apollographql.apollo.exception.ApolloException
 import com.example.rocketreserver.databinding.LaunchListFragmentBinding
 import kotlinx.coroutines.channels.Channel
 
@@ -28,47 +30,67 @@ class LaunchListFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val launches = mutableListOf<LaunchListQuery.Launch>()
-        val adapter = LaunchListAdapter(launches)
+
+        val projects = mutableListOf<GetAllProjectsQuery.Item>()
+        val adapter = LaunchListAdapter(projects)
         binding.launches.layoutManager = LinearLayoutManager(requireContext())
         binding.launches.adapter = adapter
+
+        apolloClient(requireContext()).query(GetAllProjectsQuery()).enqueue(object :
+            GraphQLCall.Callback<GetAllProjectsQuery.Data>() {
+            override fun onResponse(response: Response<GetAllProjectsQuery.Data>) {
+                val newProjects: List<GetAllProjectsQuery.Item>? =
+                    response.data()?.projects?.items()?.filterNotNull()
+
+                lifecycleScope.launchWhenResumed {
+                    if (newProjects != null) {
+                        projects.addAll(newProjects)
+                        adapter.notifyDataSetChanged()
+                    }
+                }
+            }
+
+            override fun onFailure(e: ApolloException) {
+                Log.d("LaunchList", "Failure", e)
+            }
+        })
 
         val channel = Channel<Unit>(Channel.CONFLATED)
 
         channel.trySend(Unit)
-        adapter.onEndOfListReached = {
-            channel.trySend(Unit)
-        }
-        adapter.onItemClicked = { launch ->
+//        adapter.onEndOfListReached = {
+//            channel.trySend(Unit)
+//        }
+        adapter.onItemClicked = { project ->
             findNavController().navigate(
-                LaunchListFragmentDirections.openLaunchDetails(launch.id)
+                LaunchListFragmentDirections.openLaunchDetails(project.id!!)
             )
         }
 
         lifecycleScope.launchWhenResumed {
             var cursor: String? = null
-            for (item in channel) {
-                val response = try {
-                    apolloClient(requireContext()).query(LaunchListQuery(Optional.Present(cursor))).execute()
-                } catch (e: Exception) {
-                    Log.d("LaunchList", "Failure", e)
-                    return@launchWhenResumed
-                }
-
-                val newLaunches = response.data?.launches?.launches?.filterNotNull()
-                if (newLaunches != null) {
-                    launches.addAll(newLaunches)
-                    adapter.notifyDataSetChanged()
-                }
-
-                cursor = response.data?.launches?.cursor
-                if (response.data?.launches?.hasMore != true) {
-                    break
-                }
-            }
-
-            adapter.onEndOfListReached = null
-            channel.close()
+//            for (item in channel) {
+//                val response = try {
+//                    apolloClient(requireContext()).query(LaunchListQuery(Optional.Present(cursor))).execute()
+//                } catch (e: Exception) {
+//                    Log.d("LaunchList", "Failure", e)
+//                    return@launchWhenResumed
+//                }
+//
+//                val newLaunches = response.data?.launches?.launches?.filterNotNull()
+//                if (newLaunches != null) {
+//                    launches.addAll(newLaunches)
+//                    adapter.notifyDataSetChanged()
+//                }
+//
+//                cursor = response.data?.launches?.cursor
+//                if (response.data?.launches?.hasMore != true) {
+//                    break
+//                }
+//            }
+//
+//            adapter.onEndOfListReached = null
+//            channel.close()
         }
     }
 }
