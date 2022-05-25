@@ -1,0 +1,363 @@
+type Query {
+  getUserById(id: ID!): User
+
+  getUsers(filter: UserFilter, limit: Int, nextToken: String): UserIterator
+
+  getProjectById(id: ID!): Project
+
+  getProjects(filter: ProjectFilter, limit: Int, nextToken: String): ProjectIterator
+
+  getProjectMemberById(id: ID!): ProjectMember
+
+  getProjectMembers(filter: ProjectMemberFilter, limit: Int, nextToken: String): ProjectMemberIterator
+
+  getProjectsForUsers(id: ID!): UserProjectList
+
+  getMembersOfProject(id: ID!): ProjectMemberList
+
+  getPong: String
+
+  getPubNubUUID: PubNubIterator
+}
+
+type User {
+  id: ID
+
+  name: String
+
+  email: AWSEmail
+
+  projects: [UserProjectEntry]
+
+  createdDate: AWSDateTime
+
+  modifiedDate: AWSDateTime
+}
+
+"""
+The `AWSEmail` scalar type provided by AWS AppSync, represents an Email address string that complies with [RFC 822](https://www.ietf.org/rfc/rfc822.txt). For example, "**username@example.com**" is a valid Email address.
+"""
+scalar AWSEmail
+
+type UserProjectEntry {
+  name: String
+
+  role: ProjectRole
+
+  projectStart: String
+}
+
+enum ProjectRole {
+  PROJECTMANAGER
+
+  CREATOR
+
+  BUSINESSMANAGER
+}
+
+"""
+The `AWSDateTime` scalar type provided by AWS AppSync, represents a valid ***extended*** [ISO 8601 DateTime](https://en.wikipedia.org/wiki/ISO_8601#Combined_date_and_time_representations) string. In other words, this scalar type accepts datetime strings of the form `YYYY-MM-DDThh:mm:ss.SSSZ`.  The scalar can also accept "negative years" of the form `-YYYY` which correspond to years before `0000`. For example, "**-2017-01-01T00:00Z**" and "**-9999-01-01T00:00Z**" are both valid datetime strings.  The field after the two digit seconds field is a nanoseconds field. It can accept between 1 and 9 digits. So, for example, "**1970-01-01T12:00:00.2Z**", "**1970-01-01T12:00:00.277Z**" and "**1970-01-01T12:00:00.123456789Z**" are all valid datetime strings.  The seconds and nanoseconds fields are optional (the seconds field must be specified if the nanoseconds field is to be used).  The [time zone offset](https://en.wikipedia.org/wiki/ISO_8601#Time_zone_designators) is compulsory for this scalar. The time zone offset must either be `Z` (representing the UTC time zone) or be in the format `±hh:mm:ss`. The seconds field in the timezone offset will be considered valid even though it is not part of the ISO 8601 standard.
+"""
+scalar AWSDateTime
+
+type UserIterator {
+  users: [User]
+
+  nextToken: String
+}
+
+input UserFilter {
+  id: IDFilter
+
+  name: StringFilter
+
+  email: StringFilter
+
+  createdDate: StringFilter
+
+  modifiedDate: StringFilter
+}
+
+input IDFilter {
+  ne: ID
+
+  eq: ID
+
+  le: ID
+
+  lt: ID
+
+  ge: ID
+
+  gt: ID
+
+  contains: ID
+
+  notContains: ID
+
+  between: [ID]
+
+  beginsWith: ID
+}
+
+input StringFilter {
+  ne: String
+
+  eq: String
+
+  le: String
+
+  lt: String
+
+  ge: String
+
+  gt: String
+
+  contains: String
+
+  notContains: String
+
+  between: [String]
+
+  beginsWith: String
+}
+
+type Project {
+  id: ID
+
+  name: String
+
+  description: String
+
+  projectStart: AWSDate
+
+  createdDate: AWSDateTime
+
+  modifiedDate: AWSDateTime
+}
+
+"""
+The `AWSDate` scalar type provided by AWS AppSync, represents a valid ***extended*** [ISO 8601 Date](https://en.wikipedia.org/wiki/ISO_8601#Calendar_dates) string. In other words, this scalar type accepts date strings of the form `YYYY-MM-DD`.  The scalar can also accept "negative years" of the form `-YYYY` which correspond to years before `0000`. For example, "**-2017-05-01**" and "**-9999-01-01**" are both valid dates.  This scalar type can also accept an optional [time zone offset](https://en.wikipedia.org/wiki/ISO_8601#Time_zone_designators). For example, "**1970-01-01**", "**1970-01-01Z**", "**1970-01-01-07:00**" and "**1970-01-01+05:30**" are all valid dates. The time zone offset must either be `Z` (representing the UTC time zone) or be in the format `±hh:mm:ss`. The seconds field in the timezone offset will be considered valid even though it is not part of the ISO 8601 standard.
+"""
+scalar AWSDate
+
+type ProjectIterator {
+  items: [Project]
+
+  nextToken: String
+}
+
+input ProjectFilter {
+  id: IDFilter
+
+  name: StringFilter
+
+  description: StringFilter
+
+  projectStart: StringFilter
+
+  createdDate: StringFilter
+
+  modifiedDate: StringFilter
+}
+
+type ProjectMember {
+  id: ID
+
+  projectId: ID
+
+  userId: ID
+
+  role: ProjectRole
+
+  createdDate: AWSDateTime
+
+  modifiedDate: AWSDateTime
+}
+
+type ProjectMemberIterator {
+  items: [ProjectMember]
+
+  nextToken: String
+}
+
+input ProjectMemberFilter {
+  id: IDFilter
+
+  projectId: IDFilter
+
+  userId: IDFilter
+
+  role: StringFilter
+
+  createdDate: StringFilter
+
+  modifiedDate: StringFilter
+}
+
+type UserProjectList {
+  projects: [UserProjectEntry]
+}
+
+type ProjectMemberList {
+  members: [ProjectMemberEntry]
+}
+
+type ProjectMemberEntry {
+  name: String
+
+  role: ProjectRole
+
+  projectStart: AWSDate
+}
+
+type PubNubIterator {
+  status: Int
+
+  data: [PubNubData]
+}
+
+type PubNubData {
+  id: String!
+
+  name: String
+
+  externalId: String
+
+  profileUrl: String
+
+  email: String
+
+  updated: AWSDateTime
+
+  eTag: String
+}
+
+type Mutation {
+  createUserById(input: CreateUser!): User
+
+  deleteUserById(input: DeleteUser!): User
+
+  updateUserById(input: UpdateUser!): User
+
+  createProjectById(input: CreateProject!): Project
+
+  deleteProjectById(input: DeleteProject!): Project
+
+  updateProjectById(input: UpdateProject!): Project
+
+  createProjectMemberById(input: CreateProjectMember!): ProjectMember
+
+  deleteProjectMemberById(input: DeleteProjectMember!): ProjectMember
+
+  updateProjectMemberById(input: UpdateProjectMember!): ProjectMember
+}
+
+input CreateUser {
+  name: String!
+
+  email: AWSEmail!
+}
+
+input DeleteUser {
+  id: ID!
+}
+
+input UpdateUser {
+  id: ID!
+
+  email: AWSEmail
+
+  name: String
+}
+
+input CreateProject {
+  name: String!
+
+  description: String
+
+  projectStart: AWSDate!
+}
+
+input DeleteProject {
+  id: ID!
+}
+
+input UpdateProject {
+  id: ID!
+
+  name: String
+
+  description: String
+
+  projectStart: AWSDate
+}
+
+input CreateProjectMember {
+  projectId: ID!
+
+  userId: ID!
+
+  role: ProjectRole!
+}
+
+input DeleteProjectMember {
+  id: ID!
+}
+
+input UpdateProjectMember {
+  id: ID!
+
+  projectRole: ProjectRole
+}
+
+input BooleanFilter {
+  ne: Boolean
+
+  eq: Boolean
+}
+
+input IntFilter {
+  ne: Int
+
+  eq: Int
+
+  le: Int
+
+  lt: Int
+
+  ge: Int
+
+  gt: Int
+
+  contains: Int
+
+  notContains: Int
+
+  between: [Int]
+}
+
+input FloatFilter {
+  ne: Float
+
+  eq: Float
+
+  le: Float
+
+  lt: Float
+
+  ge: Float
+
+  gt: Float
+
+  contains: Float
+
+  notContains: Float
+
+  between: [Float]
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
