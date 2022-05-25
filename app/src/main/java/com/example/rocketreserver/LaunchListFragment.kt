@@ -10,12 +10,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.amazonaws.util.DateUtils
-import com.apollographql.apollo.GraphQLCall
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloException
+import com.apollographql.apollo3.api.Optional
 import com.example.rocketreserver.databinding.LaunchListFragmentBinding
 import kotlinx.coroutines.channels.Channel
+import java.text.SimpleDateFormat
 import java.util.*
 
 class LaunchListFragment : Fragment() {
@@ -38,24 +36,25 @@ class LaunchListFragment : Fragment() {
         binding.launches.layoutManager = LinearLayoutManager(requireContext())
         binding.launches.adapter = adapter
 
-        apolloClient(requireContext()).query(GetAllProjectsQuery()).enqueue(object :
-            GraphQLCall.Callback<GetAllProjectsQuery.Data>() {
-            override fun onResponse(response: Response<GetAllProjectsQuery.Data>) {
-                val newProjects: List<GetAllProjectsQuery.Item>? =
-                    response.data()?.projects?.items()?.filterNotNull()
+        lifecycleScope.launchWhenResumed {
+            val response = try {
+                apolloClient(requireContext()).query(GetAllProjectsQuery()).execute()
+            } catch (e: Exception) {
+                Log.d("LaunchList", "Failure", e)
+                return@launchWhenResumed
+            }
 
-                lifecycleScope.launchWhenResumed {
-                    if (newProjects != null) {
-                        projects.addAll(newProjects)
-                        adapter.notifyDataSetChanged()
-                    }
+            val newProjects: List<GetAllProjectsQuery.Item>? =
+                response.data?.getProjects?.items?.filterNotNull()
+
+            lifecycleScope.launchWhenResumed {
+                if (newProjects != null) {
+                    projects.addAll(newProjects)
+                    adapter.notifyDataSetChanged()
                 }
             }
 
-            override fun onFailure(e: ApolloException) {
-                Log.d("LaunchList", "Failure", e)
-            }
-        })
+        }
 
         val channel = Channel<Unit>(Channel.CONFLATED)
 
@@ -95,33 +94,37 @@ class LaunchListFragment : Fragment() {
 //            channel.close()
         }
 
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT)
+
         binding.fab.setOnClickListener {
             val date = Date()
-            apolloClient(requireContext()).mutate(
-                AddProjectMutation(
-                    "David test $date",
-                    "Mutation test from Android client",
-                    DateUtils.formatISO8601Date(date).substringBefore('T')
-                )
-            ).enqueue(object : GraphQLCall.Callback<AddProjectMutation.Data>() {
-                override fun onResponse(response: Response<AddProjectMutation.Data>) {
-                    if (response.hasErrors()) {
-                        Log.e(
-                            "SHITSHOW",
-                            "Couldn't create project: ${response.errors()?.get(0)?.message()}"
+            lifecycleScope.launchWhenResumed {
+
+                val response = try {
+                    apolloClient(requireContext()).mutation(
+                        AddProjectMutation(
+                            "David test $date",
+                            Optional.Present("Mutation test from Android client"),
+                            formatter.format(date)
                         )
-                        return
-                    }
-                    
-                    val msg = "Created project ID: ${response.data()?.createProjectById?.id}"
-                    Log.d("SHITSHOW", msg)
-                    Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+                    ).execute()
+                } catch (e: Exception) {
+                    Log.e("SHITSHOW", "Error", e)
+                    return@launchWhenResumed
                 }
 
-                override fun onFailure(e: ApolloException) {
-                    Log.e("SHITSHOW", "Error", e)
+                if (response.hasErrors()) {
+                    Log.e(
+                        "SHITSHOW",
+                        "Couldn't create project: ${response.errors?.get(0)?.message}"
+                    )
+                    return@launchWhenResumed
                 }
-            })
+
+                val msg = "Created project ID: ${response.data?.createProjectById?.id}"
+                Log.d("SHITSHOW", msg)
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show()
+            }
         }
     }
 }

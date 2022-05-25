@@ -2,7 +2,7 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("androidx.navigation.safeargs.kotlin")
-    id("com.amazonaws.appsync")
+    id("com.apollographql.apollo3").version("3.3.0")
 }
 
 android {
@@ -44,18 +44,13 @@ dependencies {
     implementation("androidx.paging:paging-runtime-ktx:3.1.1")
     implementation("com.google.android.material:material:1.5.0")
     implementation("androidx.security:security-crypto:1.1.0-alpha03")
-    implementation("com.amazonaws:aws-android-sdk-appsync:3.3.1")
+    implementation("com.apollographql.apollo3:apollo-runtime:3.3.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.3")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
 }
 
-// See https://github.com/awslabs/aws-mobile-appsync-sdk-android/issues/273
-val correctCodeGeneration by tasks.registering(Exec::class) {
-    commandLine("./correct-code-generate-appsync.sh")
-}
-afterEvaluate {
-    tasks.getByName("compileDebugJavaWithJavac").dependsOn(correctCodeGeneration)
-    tasks.getByName("compileReleaseJavaWithJavac").dependsOn(correctCodeGeneration)
+apollo {
+    packageName.set("com.example.rocketreserver")
 }

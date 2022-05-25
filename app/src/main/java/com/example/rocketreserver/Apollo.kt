@@ -1,23 +1,22 @@
 package com.example.rocketreserver
 
 import android.content.Context
-import com.amazonaws.mobile.config.AWSConfiguration
-import com.amazonaws.mobileconnectors.appsync.AWSAppSyncClient
+import com.apollographql.apollo3.ApolloClient
+import com.apollographql.apollo3.network.okHttpClient
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
 
-private var instance: AWSAppSyncClient? = null
+private var instance: ApolloClient? = null
 
-fun apolloClient(context: Context): AWSAppSyncClient {
+fun apolloClient(context: Context): ApolloClient {
     return instance ?: run {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(AuthorizationInterceptor(context))
             .build()
 
-        return AWSAppSyncClient.builder()
-            .context(context)
-            .awsConfiguration(AWSConfiguration(context)) // see res/raw/awsconfiguration.json
+        return ApolloClient.Builder()
+            .serverUrl("https://lo6tpfrstzb5fizs2i5jubwkb4.appsync-api.us-east-1.amazonaws.com/graphql")
             .okHttpClient(okHttpClient)
             .build()
             .also { instance = it }
@@ -27,7 +26,7 @@ fun apolloClient(context: Context): AWSAppSyncClient {
 private class AuthorizationInterceptor(val context: Context) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request().newBuilder()
-            .addHeader("Authorization", User.getToken(context) ?: "")
+            .addHeader("X-API-Key", "da2-ux2shxaqibgq3lf3yu72fq5ft4")
             .build()
 
         return chain.proceed(request)
