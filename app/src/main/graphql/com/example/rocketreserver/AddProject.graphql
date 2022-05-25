@@ -1,0 +1,9 @@
+mutation AddProject($name: String!, $description: String, $projectStart: AWSDate!) {
+    createProjectById(input: {
+        name: $name
+        description: $description
+        projectStart: $projectStart
+    }) {
+        id
+    }
+}
